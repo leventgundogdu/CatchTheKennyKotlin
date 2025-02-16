@@ -3,6 +3,8 @@ package com.leventgundogdu.catchthekennykotlin
 import android.content.DialogInterface
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
@@ -17,6 +19,10 @@ import kotlin.random.Random
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding : ActivityMainBinding
+    var score = 0
+    var imageArray = ArrayList<ImageView>()
+    var handler = Handler(Looper.getMainLooper())
+    var runnable = Runnable {  }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,61 +30,91 @@ class MainActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
-        var score = 0
-        var lastChosenItem : ImageView? = null
+        //ImageArray
 
-        val imageViews = arrayOf(
-            binding.imageView, binding.imageView1, binding.imageView2,
-            binding.imageView3, binding.imageView4, binding.imageView5,
-            binding.imageView6, binding.imageView7, binding.imageView8  )
+        imageArray.add(binding.imageView)
+        imageArray.add(binding.imageView2)
+        imageArray.add(binding.imageView3)
+        imageArray.add(binding.imageView4)
+        imageArray.add(binding.imageView5)
+        imageArray.add(binding.imageView6)
+        imageArray.add(binding.imageView7)
+        imageArray.add(binding.imageView8)
+        imageArray.add(binding.imageView9)
 
-        object : CountDownTimer(15000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                binding.textView.text = "Time: ${millisUntilFinished / 1000}"
+        hideImages()
 
-                for (imageView in imageViews) {
-                    imageView.visibility = View.INVISIBLE
-                }
+        //CountDown Timer
 
-                var randomElement = imageViews[Random.nextInt(imageViews.size)]
-
-                do {
-                    randomElement = imageViews[Random.nextInt(imageViews.size)]
-                } while (randomElement == lastChosenItem) //Ensuring that the random selected item is not the same.
-
-                randomElement.visibility = View.VISIBLE
-                randomElement.setOnClickListener {
-                    score = score + 1
-                    binding.scoreTextView.text = "Score: $score"
-                }
-                lastChosenItem = randomElement
-
-            }
-
+        object : CountDownTimer(15500,1000){
             override fun onFinish() {
-                binding.textView.text = "Time: 0"
 
+                binding.timeText.text = "Time: 0"
+
+                handler.removeCallbacks(runnable)
+
+                for (image in imageArray) {
+                    image.visibility = View.INVISIBLE
+                }
+
+
+
+                //Alert
                 val alert = AlertDialog.Builder(this@MainActivity)
-                alert.setTitle("Game Over")
-                alert.setMessage("Try Again?")
-                alert.setPositiveButton("Yes", object : DialogInterface.OnClickListener {
-                    override fun onClick(dialog: DialogInterface?, which: Int) {
-                        recreate() //This method re-creates the onCreate() method.
-                    }
 
-                })
-                alert.setNegativeButton("No") { p0, p1 ->
-                    Toast.makeText(this@MainActivity, "Good Game", Toast.LENGTH_LONG).show()
+                alert.setTitle("Game Over")
+                alert.setMessage("Restart The Game?")
+                alert.setPositiveButton("Yes") {dialog, which ->
+                    //Restart
+                    val intent = intent
+                    finish()
+                    startActivity(intent)
+
+
+                }
+
+                alert.setNegativeButton("No") {dialog, which ->
+                    Toast.makeText(this@MainActivity,"Good Game",Toast.LENGTH_LONG).show()
                 }
 
                 alert.show()
 
+
+            }
+
+            override fun onTick(millisUntilFinished: Long) {
+                binding.timeText.text = "Time: " + millisUntilFinished/1000
             }
 
         }.start()
 
     }
 
+    fun hideImages() {
 
+        runnable = object : Runnable {
+            override fun run() {
+                for (image in imageArray) {
+                    image.visibility = View.INVISIBLE
+                }
+
+                val randomIndex = Random.nextInt(imageArray.size)
+                imageArray[randomIndex].visibility = View.VISIBLE
+
+                handler.postDelayed(runnable,500)
+            }
+
+        }
+
+        handler.post(runnable)
+
+    }
+
+
+    fun increaseScore(view: View){
+        score = score + 1
+        binding.scoreText.text = "Score: $score"
+
+    }
 
 }
